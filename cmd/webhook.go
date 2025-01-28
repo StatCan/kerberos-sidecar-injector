@@ -353,28 +353,3 @@ func (whsvr *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("could not write response: %v", err), http.StatusInternalServerError)
 	}
 }
-
-// func getSvmInfoList(client *kubernetes.Clientset) (map[string]SvmInfo, error) {
-// 	klog.Infof("Getting filers list...")
-
-// 	filerListCM, err := client.CoreV1().ConfigMaps("das").Get(context.Background(), "filers-list", metav1.GetOptions{})
-// 	if err != nil {
-// 		klog.Errorf("Error occured while getting the filers list: %v", err)
-// 		return nil, err
-// 	}
-
-// 	var svmInfoList []SvmInfo
-// 	err = json.Unmarshal([]byte(filerListCM.Data["filers"]), &svmInfoList)
-// 	if err != nil {
-// 		klog.Errorf("Error occured while unmarshalling the filers list: %v", err)
-// 		return nil, err
-// 	}
-
-// 	//format the data into something a bit more usable
-// 	filerList := map[string]SvmInfo{}
-// 	for _, svm := range svmInfoList {
-// 		filerList[svm.Vserver] = svm
-// 	}
-
-// 	return filerList, nil
-// }
