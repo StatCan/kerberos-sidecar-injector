@@ -236,6 +236,7 @@ func createPatch(pod *corev1.Pod, sidecarConfigTemplate *Config, annotations map
 
 // main mutation process
 func (whsvr *WebhookServer) mutate(ar *admissionv1.AdmissionReview, clientset *kubernetes.Clientset) *admissionv1.AdmissionResponse {
+	infoLogger.Printf("TEST - here2")
 	req := ar.Request
 	var pod corev1.Pod
 	if err := json.Unmarshal(req.Object.Raw, &pod); err != nil {
@@ -296,6 +297,8 @@ func (whsvr *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
 		panic(err.Error())
 	}
 
+	infoLogger.Printf("TEST - here1")
+
 	var body []byte
 	if r.Body != nil {
 		if data, err := io.ReadAll(r.Body); err == nil {
@@ -315,7 +318,7 @@ func (whsvr *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid Content-Type, expect `application/json`", http.StatusUnsupportedMediaType)
 		return
 	}
-
+	infoLogger.Printf("TEST - here5")
 	var admissionResponse *admissionv1.AdmissionResponse
 	ar := admissionv1.AdmissionReview{}
 	if _, _, err := deserializer.Decode(body, nil, &ar); err != nil {
@@ -326,9 +329,10 @@ func (whsvr *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 	} else {
+		infoLogger.Printf("TEST - here3")
 		admissionResponse = whsvr.mutate(&ar, clientset)
 	}
-
+	infoLogger.Printf("TEST - here4")
 	admissionReview := admissionv1.AdmissionReview{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "admission.k8s.io/v1",
@@ -347,34 +351,10 @@ func (whsvr *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
 		warningLogger.Printf("Can't encode response: %v", err)
 		http.Error(w, fmt.Sprintf("could not encode response: %v", err), http.StatusInternalServerError)
 	}
+
 	infoLogger.Printf("Ready to write reponse ...")
 	if _, err := w.Write(resp); err != nil {
 		warningLogger.Printf("Can't write response: %v", err)
 		http.Error(w, fmt.Sprintf("could not write response: %v", err), http.StatusInternalServerError)
 	}
 }
-
-// func getSvmInfoList(client *kubernetes.Clientset) (map[string]SvmInfo, error) {
-// 	klog.Infof("Getting filers list...")
-
-// 	filerListCM, err := client.CoreV1().ConfigMaps("das").Get(context.Background(), "filers-list", metav1.GetOptions{})
-// 	if err != nil {
-// 		klog.Errorf("Error occured while getting the filers list: %v", err)
-// 		return nil, err
-// 	}
-
-// 	var svmInfoList []SvmInfo
-// 	err = json.Unmarshal([]byte(filerListCM.Data["filers"]), &svmInfoList)
-// 	if err != nil {
-// 		klog.Errorf("Error occured while unmarshalling the filers list: %v", err)
-// 		return nil, err
-// 	}
-
-// 	//format the data into something a bit more usable
-// 	filerList := map[string]SvmInfo{}
-// 	for _, svm := range svmInfoList {
-// 		filerList[svm.Vserver] = svm
-// 	}
-
-// 	return filerList, nil
-// }
