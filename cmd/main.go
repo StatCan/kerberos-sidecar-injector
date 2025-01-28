@@ -65,7 +65,7 @@ func main() {
 	if err != nil {
 		errorLogger.Fatalf("Failed to load configuration: %v", err)
 	}
-	infoLogger.Printf("TEST - here - again")
+	infoLogger.Printf("TEST - here - again, %v", sidecarConfig)
 	// create or update the mutatingwebhookconfiguration
 	err = createOrUpdateMutatingWebhookConfiguration(caPEM, webhookServiceName, webhookNamespace)
 	if err != nil {
@@ -79,7 +79,7 @@ func main() {
 			TLSConfig: &tls.Config{Certificates: []tls.Certificate{pair}},
 		},
 	}
-	infoLogger.Printf("TEST - here - again3")
+	infoLogger.Printf("TEST - here - again3, %v", whsvr)
 	// define http server and server handler
 	mux := http.NewServeMux()
 	mux.HandleFunc(webhookInjectPath, whsvr.serve)
