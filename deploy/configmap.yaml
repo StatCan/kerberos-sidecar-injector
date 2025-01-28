@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kerberos-sidecar-injector-json
+  namespace: das
+  labels:
+    app: kerberos-sidecar-injector
+data:
+  sidecarconfig.json: |
+    {
+      "containers": [
+        {
+          "name": "kerberos-sidecar",
+          "image": "artifactory.cloud.statcan.ca/das-aaw-docker/kerberos-sidecar:latest",
+          "imagePullPolicy": "IfNotPresent",
+          "volumeMounts": [
+            {
+              "name": "kerberos-credential-cache",
+              "mountPath": "/dev/shm"
+            },
+            {
+              "name": "kerberos-conf",
+              "mountPath": "/etc/krb5.conf",
+              "subPath": "krb5.conf"
+            },
+            {
+              "mountPath": "/krb5",
+              "name": "kerberos-keytab"
+            }
+          ],
+          "livenessProbe": {
+            "exec": {
+              "command": [
+                "test",
+                "-f",
+                "/dev/shm/ccache"
+              ]
+            },
+            "initialDelaySeconds": 2,
+            "periodSeconds": 60
+          }
+        }
+      ],
+      "volumes": [
+        {
+          "name": "kerberos-credential-cache",
+          "emptyDir": {
+            "medium": "Memory"
+          }
+        },
+        {
+          "name": "kerberos-keytab",
+          "secret": {
+            "secretName": "kerberos-keytab"
+          }
+        },
+        {
+          "name": "kerberos-conf",
+          "configMap": {
+            "name": "kerberos-sidecar-config"
+          }
+        }
+      ]
+    }

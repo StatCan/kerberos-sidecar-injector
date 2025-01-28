@@ -1,0 +1,17 @@
+namespace: das
+
+resources:
+- clusterrole.yaml
+- clusterrolebinding.yaml
+- configmap.yaml
+- deployment.yaml
+- service.yaml
+- serviceaccount.yaml
+
+images:
+- name: kerberos-sidecar-injector
+# must update this anways
+  newName: artifactory.cloud.statcan.ca/das-aaw-docker/kerberos-injector
+  newTag: latest
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization

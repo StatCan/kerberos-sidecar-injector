@@ -1,0 +1,102 @@
+# This workflow:
+# * Builds, tests, and scans all images
+# * (optionally) pushes the images to ACR
+#
+#
+# This workflow triggers on:
+# * a push to main
+#
+# Image build/test/scan will run on any of the above events.
+# Image push will run only if:
+# * this is a push to main
+#
+# To configure this workflow:
+#
+# 1. Set up the following secrets in your workspace:
+#     a. REGISTRY_USERNAME with ACR username
+#     b. REGISTRY_PASSWORD with ACR Password
+#
+# 2. Change the values for the REGISTRY_NAME
+name: build_and_push
+on:
+  push:
+    branches:
+      - 'main'
+  
+jobs:
+  # Any checks that run pre-build
+  pre-build-checks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master       
+  build-push:
+    env:
+      REGISTRY_NAME: k8scc01covidacr
+      LOCAL_REPO: localhost:5000
+      TRIVY_VERSION: "v0.57.0"
+      TRIVY_DATABASES: '"ghcr.io/aquasecurity/trivy-db:2","public.ecr.aws/aquasecurity/trivy-db"'
+      TRIVY_JAVA_DATABASES: '"ghcr.io/aquasecurity/trivy-java-db:1","public.ecr.aws/aquasecurity/trivy-java-db"'
+      TRIVY_MAX_RETRIES: 5
+      TRIVY_RETRY_DELAY: 20
+    needs: pre-build-checks
+    runs-on: ubuntu-latest
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+    steps:
+
+    - uses: actions/checkout@master
+
+    # Connect to Azure Container registry (ACR)
+    - uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+        
+    - name: Build image
+      id: build-image
+      run: |
+        docker build -f Dockerfile -t localhost:5000/kerberos-injector:latest .
+        docker push localhost:5000/kerberos-injector:latest
+        docker image prune
+
+    # Scan image for vulnerabilities
+    - name: Aqua Security Trivy image scan
+      run: |
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin ${{ env.TRIVY_VERSION }}
+        
+        set +e # Lets trivy return an error without it being fatal
+
+        for ((i=0; i<${{ env.TRIVY_MAX_RETRIES }}; i++)); do
+          echo "Attempt $((i + 1)) of ${{ env.TRIVY_MAX_RETRIES }}..."
+
+          trivy image \
+            --db-repository ${{ env.TRIVY_DATABASES }} \
+            --java-db-repository ${{ env.TRIVY_JAVA_DATABASES }} \
+            localhost:5000/kerberos-injector:latest \
+            --exit-code 10 --timeout=20m --scanners vuln --severity CRITICAL
+          EXIT_CODE=$?
+
+          if [[ $EXIT_CODE -eq 0 ]]; then
+            echo "Trivy scan completed successfully."
+            exit 0
+          elif [[ $EXIT_CODE -eq 10 ]]; then
+            echo "Trivy scan completed successfully. Some vulnerabilities were found."
+            exit 0
+          elif [[ $i -lt $(( ${{ env.TRIVY_MAX_RETRIES }} - 1))  ]]; then
+            echo "Encountered unexpected error. Retrying in ${{ env.TRIVY_RETRY_DELAY }} seconds..."
+            sleep ${{ env.TRIVY_RETRY_DELAY }}
+          else
+            echo "Unexpected error persists after ${{ env.TRIVY_MAX_RETRIES }} attempts. Exiting."
+            exit 1
+          fi
+        done
+
+    - name: Push image to registry
+      run: |
+        docker pull localhost:5000/kerberos-injector:latest
+        docker tag localhost:5000/kerberos-injector:latest ${{ env.REGISTRY_NAME }}.azurecr.io/kerberos-injector:${{ github.sha }}
+        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/kerberos-injector:${{ github.sha }}
