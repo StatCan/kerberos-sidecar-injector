@@ -65,13 +65,13 @@ func main() {
 	if err != nil {
 		errorLogger.Fatalf("Failed to load configuration: %v", err)
 	}
-
+	infoLogger.Printf("TEST - here - again")
 	// create or update the mutatingwebhookconfiguration
 	err = createOrUpdateMutatingWebhookConfiguration(caPEM, webhookServiceName, webhookNamespace)
 	if err != nil {
 		errorLogger.Fatalf("Failed to create or update the mutating webhook configuration: %v", err)
 	}
-
+	infoLogger.Printf("TEST - here - again2")
 	whsvr := &WebhookServer{
 		sidecarConfig: sidecarConfig,
 		server: &http.Server{
@@ -79,19 +79,19 @@ func main() {
 			TLSConfig: &tls.Config{Certificates: []tls.Certificate{pair}},
 		},
 	}
-
+	infoLogger.Printf("TEST - here - again3")
 	// define http server and server handler
 	mux := http.NewServeMux()
 	mux.HandleFunc(webhookInjectPath, whsvr.serve)
 	whsvr.server.Handler = mux
-
+	infoLogger.Printf("TEST - here - again4")
 	// start webhook server in new rountine
 	go func() {
 		if err := whsvr.server.ListenAndServeTLS("", ""); err != nil {
 			errorLogger.Fatalf("Failed to listen and serve webhook server: %v", err)
 		}
 	}()
-
+	infoLogger.Printf("TEST - here - again5")
 	// listening OS shutdown singal
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)

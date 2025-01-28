@@ -285,6 +285,7 @@ func (whsvr *WebhookServer) mutate(ar *admissionv1.AdmissionReview, clientset *k
 
 // Serve method for webhook server
 func (whsvr *WebhookServer) serve(w http.ResponseWriter, r *http.Request) {
+	infoLogger.Printf("TEST - here - again6")
 	// Creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
