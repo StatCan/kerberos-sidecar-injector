@@ -36,7 +36,7 @@ func init() {
 
 func main() {
 	// init command flags
-	flag.IntVar(&port, "port", 8443, "Webhook server port.")
+	flag.IntVar(&port, "port", 8444, "Webhook server port.")
 	flag.StringVar(&webhookServiceName, "service-name", "kerberos-sidecar-injector", "Webhook service name.")
 	flag.StringVar(&sidecarConfigFile, "sidecar-config-file", "/etc/webhook/config/sidecarconfig.json", "Sidecar injector configuration file.")
 	// flag.StringVar(&certFile, "tlsCertFile", "/etc/webhook/certs/cert.pem", "x509 Certificate file.")
