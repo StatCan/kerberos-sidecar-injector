@@ -13,7 +13,7 @@ This is all done in the `createPatch` function. The very first thing that is don
 From there, we don't really do any manipulations to the template stored in the `kerberos-sidecar-injector-json` configMap. Since every pod that gets injected will all share the exact same specs for the sidecar, there is no need for any configurations to change from the default.
 
 ### Getting the values to use in the json patch
-For the sidecar specz, we have to use the `kerberos-sidecar-injector-json` configmap object from the `das` namespace. This works as the model / structure that we inject into the `pod` spec. 
+For the sidecar spec, we have to use the `kerberos-sidecar-injector-json` configmap object from the `das` namespace. This works as the model / structure that we inject into the `pod` spec. 
 
 ### Inserting the values
 Using the json template that we deep copy (to avoid modifying the same one over and over again and thus only getting the last changes), we call various `addX` or `updateX` functions whose only purpose is to return a `[]patchOperation`. These are self explanatory but we will note any exceptional cases below.
