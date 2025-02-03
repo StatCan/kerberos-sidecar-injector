@@ -1,12 +1,9 @@
-# filer-sidecar-injector
+# Kerberos Sidecar Injector
 
-This is forked off of the repo [kube-sidecar-injector](https://github.com/morvencao/kube-sidecar-injector) and was a repo used for [a tutorial at Medium](https://medium.com/ibm-cloud/diving-into-kubernetes-mutatingadmissionwebhook-6ef3c5695f74) to create a Kubernetes [MutatingAdmissionWebhook](https://kubernetes.io/docs/admin/admission-controllers/#mutatingadmissionwebhook-beta-in-19) that injects a nginx sidecar container into pod prior to persistence of the object.
-
-## Forked for Filer usage
-Specifically for use with Filers.
+This repo was initiated as a copy of our [filer-sidecar-injector](https://github.com/StatCan/filer-sidecar-injector) repo as they both share a very similar design. This is used to create a Kubernetes [MutatingAdmissionWebhook](https://kubernetes.io/docs/admin/admission-controllers/#mutatingadmissionwebhook-beta-in-19) that injects a sidecar container into a pod prior to the persistence of the object. This sidecar is an alpine image based on the [kerberos sidecar image](https://gitlab.k8s.cloud.statcan.ca/cloudnative/docker/kerberos-sidecar) initially designed by our Cloud Native team. The only difference we had to make was to change from `USER 1001` to `USER 1000`.
 
 ## Mutating the Pod
-This webhook intercepts `pod` create requests and will `jsonpatch` the spec. Whether or not to mutate the pod spec happens in the `mutate` function. If the user namespace does not have an `existing-shares` configmap, or the pod does not have the `notebook-name` label present then it will not mutate and `inject` the filer sidecars.
+This webhook intercepts `pod` create requests and will `jsonpatch` the spec. Whether or not to mutate the pod spec happens in the `mutate` function. If the user namespace does not have the `kerberos-sidecar-injection` label, does not have a `kerberos-keytab` secret, or the pod does not have the `notebook-name` label present, then it will **not** mutate and `inject` the kerberos sidecars.
 
 ## Creating the jsonpatch
 This is all done in the `createPatch` function. The very first thing that is done is determine if the pod _already has a volume_. This is because we do not want to overwrite any existing volumes in the `jsonpatch` as adding a new entry is very different from appending one.
