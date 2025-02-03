@@ -1,6 +1,9 @@
 # Kerberos Sidecar Injector
 
-This repo was initiated as a copy of our [filer-sidecar-injector](https://github.com/StatCan/filer-sidecar-injector) repo as they both share a very similar design. This is used to create a Kubernetes [MutatingAdmissionWebhook](https://kubernetes.io/docs/admin/admission-controllers/#mutatingadmissionwebhook-beta-in-19) that injects a sidecar container into a pod prior to the persistence of the object. This sidecar is an alpine image based on the [kerberos sidecar image](https://gitlab.k8s.cloud.statcan.ca/cloudnative/docker/kerberos-sidecar) initially designed by our Cloud Native team. The only difference we had to make was to change from `USER 1001` to `USER 1000`.
+This repo was initiated as a copy of our [filer-sidecar-injector](https://github.com/StatCan/filer-sidecar-injector) repo as they both share a very similar design. 
+This is used to create a Kubernetes [MutatingAdmissionWebhook](https://kubernetes.io/docs/admin/admission-controllers/#mutatingadmissionwebhook-beta-in-19) that injects a sidecar container into a pod prior to the persistence of the object. This sidecar is an alpine image based on the [kerberos sidecar image](https://gitlab.k8s.cloud.statcan.ca/cloudnative/docker/kerberos-sidecar) initially designed by our Cloud Native team. The only difference we had to make was to change from `USER 1001` to `USER 1000`.
+
+The main goal of the kerberos sidecar is to allow for authentication to services(mainly currently SQL IaaS Databases) demanding something compliant with Windows Authentication.
 
 ## Mutating the Pod
 This webhook intercepts `pod` create requests and will `jsonpatch` the spec. Whether or not to mutate the pod spec happens in the `mutate` function. If the user namespace does not have the `kerberos-sidecar-injection` label, does not have a `kerberos-keytab` secret, or the pod does not have the `notebook-name` label present, then it will **not** mutate and `inject` the kerberos sidecars.
@@ -20,6 +23,12 @@ This function adds the necessary volume mounts to the user container spec. To de
 
 ### Building and Deploying for testing
 Create a PR with the `auto-deploy` label, and after the image has successfully pushed to the ACR, go to the `kerberos` application in das argocd, turn off autosync (if it is on) and update the `kerberos-sidecar-injector` image tag with the pushed image tag. Start up a notebook and ensure it patches correctly.
+
+## Kerberos Sidecar Volumes
+There are 3 volume mounts needed for the kerberos sidecar to function as expected:
+- `kerberos-credential-cache` which is set up as an `emptyDir` and is used to store the cached results of the authentication
+- `kerberos-conf` which is generated from the `kerberos-sidecar-config` configMap, which gets created in the user's namespace by our kerberos controller. It stores the configurations for the sidecar
+- `kerberos-keytab` which is generated from the secret of the same name in the user's namespace which gets created by running the `ktutil-keytab` script from a running notebook. It gets used by the sidecar as the authentication token
 
 ## Related Components
 The [kerberos controller](https://github.com/StatCan/aaw-kubeflow-profiles-controller/blob/profiles-controller-aaw2.0/cmd/kerberos.go) is setup to create the necessary components for the kerberos sidecar container to work as expected. When a user creates a "kerberos-keytab" secret in their namespace, with the use of our custom `ktutil-keytab` script defined in our [container images repo](https://github.com/StatCan/zone-kubeflow-containers/blob/master/resources/common/ktutil-keytab.sh), the controller should pick up this change in the user's namespace and create two resources:
