@@ -21,8 +21,11 @@ Using the json template that we deep copy (to avoid modifying the same one over 
 ### updateWorkingVolumeMounts
 This function adds the necessary volume mounts to the user container spec. To determine if we are modifying the correct container, we use the `NB_PREFIX` environment variable that should be present in the container specs. If you are testing with a podspec, ensure this variable is present. 
 
-### Building and Deploying for testing
+## For testing
 Create a PR with the `auto-deploy` label, and after the image has successfully pushed to the ACR, go to the `kerberos` application in das argocd, turn off autosync (if it is on) and update the `kerberos-sidecar-injector` image tag with the pushed image tag. Start up a notebook and ensure it patches correctly.
+
+## Building and Deploying
+Once your PR is merged and the workflows are completed, take the SHA tag for the newly built image, and update the tag for the deployment for the kerberos-sidecar-injector in our gitlab [aaw-argocd-manifests](https://gitlab.k8s.cloud.statcan.ca/business-transformation/aaw/aaw-argocd-manifests) repo.
 
 ## Kerberos Sidecar Volumes
 There are 3 volume mounts needed for the kerberos sidecar to function as expected:
