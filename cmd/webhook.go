@@ -189,20 +189,20 @@ func updateWorkingVolumeMounts(targetContainerSpec []corev1.Container, isFirst b
 					patch = append(patch, patchOperation{
 						Op: "add",
 						// the path for only the first value
-						Path:  "/spec/containers/0/volumeMounts",
+						Path:  fmt.Sprintf("/spec/containers/%d/volumeMounts", key),
 						Value: mapSlice,
 					})
 				} else {
 					patch = append(patch, patchOperation{
 						Op: "add",
 						// Now that there is one that has created an array, this can just go after it.
-						Path:  "/spec/containers/0/volumeMounts/-",
+						Path:  fmt.Sprintf("/spec/containers/%d/volumeMounts/-", key),
 						Value: credsCache,
 					})
 					patch = append(patch, patchOperation{
 						Op: "add",
 						// Now that there is one that has created an array, this can just go after it.
-						Path:  "/spec/containers/0/volumeMounts/-",
+						Path:  fmt.Sprintf("/spec/containers/%d/volumeMounts/-", key),
 						Value: kerbConf,
 					})
 				}
