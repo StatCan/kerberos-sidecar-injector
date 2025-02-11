@@ -13,8 +13,8 @@ data:
           "name": "kerberos-sidecar",
           "image": "artifactory.cloud.statcan.ca/das-aaw-docker/kerberos-sidecar:latest",
           "imagePullPolicy": "IfNotPresent",
-          "command": ["/bin/bash"]
-          "args": ["-c", "/rekinit.sh; echo 'Kerberos stopped'; sleep infinity"]
+          "command": ["/bin/bash"],
+          "args": ["-c", "/rekinit.sh; echo 'Kerberos stopped'; sleep infinity"],
           "volumeMounts": [
             {
               "name": "kerberos-credential-cache",
