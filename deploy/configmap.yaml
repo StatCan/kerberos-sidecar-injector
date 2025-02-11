@@ -13,6 +13,8 @@ data:
           "name": "kerberos-sidecar",
           "image": "artifactory.cloud.statcan.ca/das-aaw-docker/kerberos-sidecar:latest",
           "imagePullPolicy": "IfNotPresent",
+          "command": ["/bin/bash"]
+          "args": ["-c", "/rekinit.sh; echo 'Kerberos stopped'; sleep infinity"]
           "volumeMounts": [
             {
               "name": "kerberos-credential-cache",
@@ -27,18 +29,7 @@ data:
               "mountPath": "/krb5",
               "name": "kerberos-keytab"
             }
-          ],
-          "livenessProbe": {
-            "exec": {
-              "command": [
-                "test",
-                "-f",
-                "/dev/shm/ccache"
-              ]
-            },
-            "initialDelaySeconds": 2,
-            "periodSeconds": 60
-          }
+          ]
         }
       ],
       "volumes": [
