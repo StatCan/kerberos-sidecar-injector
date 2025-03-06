@@ -91,7 +91,7 @@ func mutationRequired(metadata *metav1.ObjectMeta) bool {
 	switch strings.ToLower(annotations[admissionWebhookAnnotationInjectKey]) {
 	default:
 		required = true
-	case "n", "not", "false", "off":
+	case "n", "not", "false", "off", "injected":
 		required = false
 	}
 
