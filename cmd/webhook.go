@@ -29,9 +29,7 @@ var (
 
 const (
 	admissionWebhookAnnotationInjectKey = "kerberos-injector-webhook.das-zone.statcan/inject"
-	admissionWebhookAnnotationStatusKey = "kerberos-injector-webhook.das-zone.statcan/status"
-
-	kerberosSecret = "kerberos-keytab"
+	kerberosSecret                      = "kerberos-keytab"
 )
 
 type WebhookServer struct {
@@ -88,22 +86,16 @@ func mutationRequired(metadata *metav1.ObjectMeta) bool {
 		annotations = map[string]string{}
 	}
 
-	status := annotations[admissionWebhookAnnotationStatusKey]
-
 	// determine whether to perform mutation based on annotation for the target resource
 	var required bool
-	if strings.ToLower(status) == "injected" {
+	switch strings.ToLower(annotations[admissionWebhookAnnotationInjectKey]) {
+	default:
+		required = true
+	case "n", "not", "false", "off", "injected":
 		required = false
-	} else {
-		switch strings.ToLower(annotations[admissionWebhookAnnotationInjectKey]) {
-		default:
-			required = true
-		case "n", "not", "false", "off":
-			required = false
-		}
 	}
 
-	infoLogger.Printf("Mutation policy for %v/%v: status: %q required:%v", metadata.Namespace, metadata.Name, status, required)
+	infoLogger.Printf("Mutation policy for %v/%v: required:%v", metadata.Namespace, metadata.Name, required)
 	return required
 }
 
@@ -149,25 +141,22 @@ func addVolume(target, added []corev1.Volume, basePath string) (patch []patchOpe
 	return patch
 }
 
-func updateAnnotation(target map[string]string, added map[string]string) (patch []patchOperation) {
-	for key, value := range added {
-		if target == nil || target[key] == "" {
-			target = map[string]string{}
-			patch = append(patch, patchOperation{
-				Op:   "add",
-				Path: "/metadata/annotations",
-				Value: map[string]string{
-					key: value,
-				},
-			})
-		} else {
-			patch = append(patch, patchOperation{
-				Op:    "replace",
-				Path:  "/metadata/annotations/" + key,
-				Value: value,
-			})
-		}
+func updateAnnotation(target map[string]string) (patch []patchOperation) {
+	if target == nil || target[admissionWebhookAnnotationInjectKey] == "" {
+		target = map[string]string{}
+		patch = append(patch, patchOperation{
+			Op:    "add",
+			Path:  "/metadata/annotations/kerberos-injector-webhook.das-zone.statcan~1inject",
+			Value: "injected",
+		})
+	} else {
+		patch = append(patch, patchOperation{
+			Op:    "replace",
+			Path:  "/metadata/annotations/kerberos-injector-webhook.das-zone.statcan~1inject",
+			Value: "injected",
+		})
 	}
+
 	return patch
 }
 
@@ -213,7 +202,7 @@ func updateWorkingVolumeMounts(targetContainerSpec []corev1.Container, isFirst b
 }
 
 // createPatch function handles the mutation patch creation
-func createPatch(pod *corev1.Pod, sidecarConfigTemplate *Config, annotations map[string]string) ([]byte, error) {
+func createPatch(pod *corev1.Pod, sidecarConfigTemplate *Config) ([]byte, error) {
 	var patch []patchOperation
 	isFirstVol := true
 	// We don't want to overwrite any mounted volumes
@@ -228,7 +217,7 @@ func createPatch(pod *corev1.Pod, sidecarConfigTemplate *Config, annotations map
 	// Add container and volume to the patch
 	patch = append(patch, addContainer(pod.Spec.Containers, sidecarConfig.Containers, "/spec/containers")...)
 	patch = append(patch, addVolume(pod.Spec.Volumes, sidecarConfig.Volumes, "/spec/volumes")...)
-	patch = append(patch, updateAnnotation(pod.Annotations, annotations)...)
+	patch = append(patch, updateAnnotation(pod.Annotations)...)
 	patch = append(patch, updateWorkingVolumeMounts(pod.Spec.Containers, isFirstVol)...)
 
 	return json.Marshal(patch)
@@ -261,8 +250,7 @@ func (whsvr *WebhookServer) mutate(ar *admissionv1.AdmissionReview, clientset *k
 		}
 	}
 
-	annotations := map[string]string{admissionWebhookAnnotationStatusKey: "injected"}
-	patchBytes, err := createPatch(&pod, whsvr.sidecarConfig, annotations)
+	patchBytes, err := createPatch(&pod, whsvr.sidecarConfig)
 	if err != nil {
 		return &admissionv1.AdmissionResponse{
 			Result: &metav1.Status{
