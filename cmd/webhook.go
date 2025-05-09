@@ -248,6 +248,15 @@ func createPatch(pod *corev1.Pod, sidecarConfigTemplate *Config, annotations map
 
 	infoLogger.Printf("printing json: %+v", string(b))
 
+	jsontest := `{"limits":{"cpu":"33m","memory":"30M"},"requests":{"cpu":"3m","memory":"3333k"}}`
+	newres := corev1.ResourceRequirements{}
+	err = json.Unmarshal([]byte(jsontest), &newres)
+	if err != nil {
+		errorLogger.Printf("ERROR ERROR 2 : %+v", err)
+	}
+
+	infoLogger.Printf("printing unmarshall: %+v", newres)
+
 	// Add container and volume to the patch
 	patch = append(patch, addContainer(pod.Spec.Containers, sidecarConfig.Containers, "/spec/containers")...)
 	patch = append(patch, addVolume(pod.Spec.Volumes, sidecarConfig.Volumes, "/spec/volumes")...)
