@@ -226,9 +226,10 @@ func createPatch(pod *corev1.Pod, sidecarConfigTemplate *Config, annotations map
 	tempSidecarConfig, _ := deepcopy.Anything(sidecarConfigTemplate)
 	sidecarConfig := tempSidecarConfig.(*Config)
 
-	infoLogger.Printf("printing sidecar containers: %+v", sidecarConfig.Containers)
-
-	test := corev1.ResourceRequirements{
+	// Defines the resources for the kerberos sidecar container.
+	// Had to be defined here, the unmarshalling was not working correctly
+	// when it was defined in the configmap definition
+	sidecarResources := corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("1m"),
 			corev1.ResourceMemory: resource.MustParse("2.2M"),
@@ -239,23 +240,7 @@ func createPatch(pod *corev1.Pod, sidecarConfigTemplate *Config, annotations map
 		},
 	}
 
-	infoLogger.Printf("printing resources: %+v", test)
-
-	b, err := json.Marshal(test)
-	if err != nil {
-		errorLogger.Printf("ERROR ERROR : %+v", err)
-	}
-
-	infoLogger.Printf("printing json: %+v", string(b))
-
-	jsontest := `{"limits":{"cpu":"33m","memory":"30M"},"requests":{"cpu":"3m","memory":"3333k"}}`
-	newres := corev1.ResourceRequirements{}
-	err = json.Unmarshal([]byte(jsontest), &newres)
-	if err != nil {
-		errorLogger.Printf("ERROR ERROR 2 : %+v", err)
-	}
-
-	infoLogger.Printf("printing unmarshall: %+v", newres)
+	sidecarConfig.Containers[0].Resources = sidecarResources
 
 	// Add container and volume to the patch
 	patch = append(patch, addContainer(pod.Spec.Containers, sidecarConfig.Containers, "/spec/containers")...)
