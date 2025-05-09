@@ -14,6 +14,7 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -226,6 +227,26 @@ func createPatch(pod *corev1.Pod, sidecarConfigTemplate *Config, annotations map
 	sidecarConfig := tempSidecarConfig.(*Config)
 
 	infoLogger.Printf("printing sidecar containers: %+v", sidecarConfig.Containers)
+
+	test := corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1m"),
+			corev1.ResourceMemory: resource.MustParse("2.2M"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("5m"),
+			corev1.ResourceMemory: resource.MustParse("20M"),
+		},
+	}
+
+	infoLogger.Printf("printing resources: %+v", test)
+
+	b, err := json.Marshal(test)
+	if err != nil {
+		errorLogger.Printf("ERROR ERROR : %+v", err)
+	}
+
+	infoLogger.Printf("printing json: %+v", string(b))
 
 	// Add container and volume to the patch
 	patch = append(patch, addContainer(pod.Spec.Containers, sidecarConfig.Containers, "/spec/containers")...)
