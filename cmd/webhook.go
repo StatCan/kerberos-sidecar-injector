@@ -225,6 +225,8 @@ func createPatch(pod *corev1.Pod, sidecarConfigTemplate *Config, annotations map
 	tempSidecarConfig, _ := deepcopy.Anything(sidecarConfigTemplate)
 	sidecarConfig := tempSidecarConfig.(*Config)
 
+	infoLogger.Printf("printing sidecar containers: %+v", sidecarConfig.Containers)
+
 	// Add container and volume to the patch
 	patch = append(patch, addContainer(pod.Spec.Containers, sidecarConfig.Containers, "/spec/containers")...)
 	patch = append(patch, addVolume(pod.Spec.Volumes, sidecarConfig.Volumes, "/spec/volumes")...)
