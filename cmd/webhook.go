@@ -14,6 +14,7 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -213,6 +214,22 @@ func createPatch(pod *corev1.Pod, sidecarConfigTemplate *Config) ([]byte, error)
 	// Deep copy to avoid changes in original sidecar config
 	tempSidecarConfig, _ := deepcopy.Anything(sidecarConfigTemplate)
 	sidecarConfig := tempSidecarConfig.(*Config)
+
+	// Defines the resources for the kerberos sidecar container.
+	// Had to be defined here, the unmarshalling was not working correctly
+	// when it was defined in the configmap definition
+	sidecarResources := corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1m"),
+			corev1.ResourceMemory: resource.MustParse("2.2M"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("5m"),
+			corev1.ResourceMemory: resource.MustParse("20M"),
+		},
+	}
+
+	sidecarConfig.Containers[0].Resources = sidecarResources
 
 	// Add container and volume to the patch
 	patch = append(patch, addContainer(pod.Spec.Containers, sidecarConfig.Containers, "/spec/containers")...)
