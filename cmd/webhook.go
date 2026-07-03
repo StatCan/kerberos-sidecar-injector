@@ -122,9 +122,25 @@ func addContainer(target, added []corev1.Container, basePath string) (patch []pa
 }
 
 func addVolume(target, added []corev1.Volume, basePath string) (patch []patchOperation) {
+	// check if the new volumes would be the first added to the target pod
 	first := len(target) == 0
+
+	// Check if the shared memory volume is already present
+	hasSharedMemory := false
+	for _, targetVol := range target {
+		if targetVol.Name == "dshm" {
+			hasSharedMemory = true
+			break
+		}
+	}
+
 	var value interface{}
 	for _, add := range added {
+		//if dshm is already on the pod, skip adding the kerberos-credential-cache volume
+		if hasSharedMemory && add.Name == "kerberos-credential-cache" {
+			continue
+		}
+
 		value = add
 		path := basePath
 		if first {
@@ -174,6 +190,7 @@ func updateWorkingVolumeMounts(targetContainerSpec []corev1.Container, isFirst b
 				for _, mount := range container.VolumeMounts {
 					if mount.MountPath == "/dev/shm" {
 						isShm = true
+						break
 					}
 				}
 
