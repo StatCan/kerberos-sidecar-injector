@@ -1,15 +1,16 @@
 module github.com/morvencao/kube-sidecar-injector
 
-go 1.22.0
+go 1.26.0
 
-toolchain go1.22.2
+toolchain go1.26.2
 
 require (
-	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.30.0
 	k8s.io/apimachinery v0.30.0
 	k8s.io/client-go v0.30.0
 )
+
+require gopkg.in/yaml.v2 v2.4.0 // indirect
 
 require (
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
