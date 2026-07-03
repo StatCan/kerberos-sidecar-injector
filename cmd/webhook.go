@@ -163,19 +163,35 @@ func updateAnnotation(target map[string]string) (patch []patchOperation) {
 
 // This will ADD a volumeMount to the user container spec
 func updateWorkingVolumeMounts(targetContainerSpec []corev1.Container, isFirst bool) (patch []patchOperation) {
-	for key := range targetContainerSpec {
+	for key, container := range targetContainerSpec {
 		// if there is an envVar that has NB_PREFIX in it then we are in the right container
-		for envVars := range targetContainerSpec[key].Env {
-			if targetContainerSpec[key].Env[envVars].Name == "NB_PREFIX" {
-				var mapSlice []M
+		for _, env := range container.Env {
+			if env.Name == "NB_PREFIX" {
+
+				isShm := false
+
+				// checks if the shared memory mount is already on the container
+				for _, mount := range container.VolumeMounts {
+					if mount.MountPath == "/dev/shm" {
+						isShm = true
+					}
+				}
+
 				credsCache := M{"name": "kerberos-credential-cache",
 					"mountPath": "/dev/shm"}
 				kerbConf := M{"name": "kerberos-conf",
 					"mountPath": "/etc/krb5.conf",
 					"subPath":   "krb5.conf"}
-				mapSlice = append(mapSlice, credsCache, kerbConf)
 
 				if isFirst {
+					var mapSlice []M
+					if isShm {
+						// don't add the shared memory mount if already there
+						mapSlice = append(mapSlice, kerbConf)
+					} else {
+						mapSlice = append(mapSlice, credsCache, kerbConf)
+					}
+
 					patch = append(patch, patchOperation{
 						Op: "add",
 						// the path for only the first value
@@ -183,12 +199,14 @@ func updateWorkingVolumeMounts(targetContainerSpec []corev1.Container, isFirst b
 						Value: mapSlice,
 					})
 				} else {
-					patch = append(patch, patchOperation{
-						Op: "add",
-						// Now that there is one that has created an array, this can just go after it.
-						Path:  fmt.Sprintf("/spec/containers/%d/volumeMounts/-", key),
-						Value: credsCache,
-					})
+					if !isShm {
+						patch = append(patch, patchOperation{
+							Op: "add",
+							// Now that there is one that has created an array, this can just go after it.
+							Path:  fmt.Sprintf("/spec/containers/%d/volumeMounts/-", key),
+							Value: credsCache,
+						})
+					}
 					patch = append(patch, patchOperation{
 						Op: "add",
 						// Now that there is one that has created an array, this can just go after it.
