@@ -29,7 +29,7 @@ Once your PR is merged and the workflows are completed, take the SHA tag for the
 
 ## Kerberos Sidecar Volumes
 There are 3 volume mounts needed for the kerberos sidecar to function as expected:
-- `kerberos-credential-cache` which is set up as an `emptyDir` and is used to store the cached results of the authentication
+- `kerberos-credential-cache` which is set up as an `emptyDir` and is used to store the cached results of the authentication. This is omitted if the `dshm` volume mounted to `/dev/shm` is already present on the pod
 - `kerberos-conf` which is generated from the `kerberos-sidecar-config` configMap, which gets created in the user's namespace by our kerberos controller. It stores the configurations for the sidecar
 - `kerberos-keytab` which is generated from the secret of the same name in the user's namespace which gets created by running the `ktutil-keytab` script from a running notebook. It gets used by the sidecar as the authentication token
 
