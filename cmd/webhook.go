@@ -136,8 +136,8 @@ func addVolume(target, added []corev1.Volume, basePath string) (patch []patchOpe
 
 	var value interface{}
 	for _, add := range added {
-		//if dshm is already on the pod, skip adding the kerberos-credential-cache volume
-		if hasSharedMemory && add.Name == "kerberos-credential-cache" {
+		//if dshm is already on the pod, skip adding it again
+		if hasSharedMemory && add.Name == "dshm" {
 			continue
 		}
 
@@ -194,7 +194,7 @@ func updateWorkingVolumeMounts(targetContainerSpec []corev1.Container, isFirst b
 					}
 				}
 
-				credsCache := M{"name": "kerberos-credential-cache",
+				credsCache := M{"name": "dshm",
 					"mountPath": "/dev/shm"}
 				kerbConf := M{"name": "kerberos-conf",
 					"mountPath": "/etc/krb5.conf",

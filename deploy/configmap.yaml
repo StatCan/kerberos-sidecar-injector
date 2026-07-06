@@ -17,7 +17,7 @@ data:
           "args": ["-c", "/rekinit.sh; echo 'Kerberos stopped'; sleep infinity"],
           "volumeMounts": [
             {
-              "name": "kerberos-credential-cache",
+              "name": "dshm",
               "mountPath": "/dev/shm"
             },
             {
@@ -34,7 +34,7 @@ data:
       ],
       "volumes": [
         {
-          "name": "kerberos-credential-cache",
+          "name": "dhsm",
           "emptyDir": {
             "medium": "Memory"
           }
