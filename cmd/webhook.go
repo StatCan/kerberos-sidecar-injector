@@ -169,7 +169,7 @@ func updateWorkingVolumeMounts(targetContainerSpec []corev1.Container, isFirst b
 			if targetContainerSpec[key].Env[envVars].Name == "NB_PREFIX" {
 				var mapSlice []M
 				credsCache := M{"name": "kerberos-credential-cache",
-					"mountPath": "/dev/shm"}
+					"mountPath": "/dev/shm/kerberos"}
 				kerbConf := M{"name": "kerberos-conf",
 					"mountPath": "/etc/krb5.conf",
 					"subPath":   "krb5.conf"}

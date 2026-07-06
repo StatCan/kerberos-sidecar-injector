@@ -18,7 +18,7 @@ data:
           "volumeMounts": [
             {
               "name": "kerberos-credential-cache",
-              "mountPath": "/dev/shm"
+              "mountPath": "/dev/shm/kerberos"
             },
             {
               "name": "kerberos-conf",
